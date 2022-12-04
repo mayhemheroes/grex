@@ -6,9 +6,20 @@ extern crate grex;
 
 use grex::RegExpBuilder;
 
+#[derive(Arbitrary, Debug, Clone)]
+struct ByteString<'a> {
+    bytes: &'a [u8],
+}
+
+impl<'a> Into<String> for ByteString<'a> {
+    fn into(self) -> String {
+        String::from_utf8_lossy(self.bytes).to_string()
+    }
+}
+
 #[derive(Arbitrary, Debug)]
 struct TestInput<'a> {
-    data: Vec<&'a [u8]>,
+    data: Vec<ByteString<'a>>,
 
     with_conversion_of_digits: bool,
     with_conversion_of_non_digits: bool,
@@ -32,13 +43,7 @@ struct TestInput<'a> {
 
 fuzz_target!(|input: TestInput<'_>| {
     // fuzzed code goes here
-    let mut builder = RegExpBuilder::from(
-        &input
-            .data
-            .into_iter()
-            .map(|arr| String::from_utf8_lossy(arr))
-            .collect::<Vec<_>>(),
-    );
+    let mut builder = RegExpBuilder::from(&input.data);
 
     macro_rules! apply_bool {
         ($x:ident) => {{
