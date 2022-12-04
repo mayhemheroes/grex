@@ -33,7 +33,7 @@ pub(crate) const MINIMUM_SUBSTRING_LENGTH_MESSAGE: &str =
 #[derive(Clone)]
 pub struct RegExpBuilder {
     test_cases: Vec<String>,
-    pub(crate) config: RegExpConfig,
+    pub config: RegExpConfig,
 }
 
 impl RegExpBuilder {

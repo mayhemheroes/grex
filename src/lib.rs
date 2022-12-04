@@ -282,6 +282,7 @@ mod unicode_tables;
 mod wasm;
 
 pub use builder::RegExpBuilder;
+pub use config::RegExpConfig;
 
 #[cfg(target_family = "wasm")]
 pub use wasm::RegExpBuilder as WasmRegExpBuilder;
