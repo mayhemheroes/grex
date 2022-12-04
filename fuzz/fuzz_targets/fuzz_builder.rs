@@ -4,7 +4,7 @@ use libfuzzer_sys::{arbitrary::Arbitrary, fuzz_target};
 
 extern crate grex;
 
-use grex::RegExpBuilder;
+use grex::{RegExpBuilder, RegExpConfig};
 
 #[derive(Arbitrary, Debug, Clone)]
 struct ByteString<'a> {
@@ -21,24 +21,23 @@ impl<'a> Into<String> for ByteString<'a> {
 struct TestInput<'a> {
     data: Vec<ByteString<'a>>,
 
-    with_conversion_of_digits: bool,
-    with_conversion_of_non_digits: bool,
-    with_conversion_of_whitespace: bool,
-    with_conversion_of_non_whitespace: bool,
-    with_conversion_of_words: bool,
-    with_conversion_of_non_words: bool,
-    with_conversion_of_repetitions: bool,
-    with_case_insensitive_matching: bool,
-    with_capturing_groups: bool,
-    with_verbose_mode: bool,
-    without_start_anchor: bool,
-    without_end_anchor: bool,
-    without_anchors: bool,
-    with_syntax_highlighting: bool,
-
-    with_minimum_repetitions: Option<u32>,
-    with_minimum_substring_length: Option<u32>,
-    with_escaping_of_non_ascii_chars: Option<bool>,
+    minimum_repetitions: u32,
+    minimum_substring_length: u32,
+    is_digit_converted: bool,
+    is_non_digit_converted: bool,
+    is_space_converted: bool,
+    is_non_space_converted: bool,
+    is_word_converted: bool,
+    is_non_word_converted: bool,
+    is_repetition_converted: bool,
+    is_case_insensitive_matching: bool,
+    is_capturing_group_enabled: bool,
+    is_non_ascii_char_escaped: bool,
+    is_astral_code_point_converted_to_surrogate: bool,
+    is_verbose_mode_enabled: bool,
+    is_start_anchor_disabled: bool,
+    is_end_anchor_disabled: bool,
+    is_output_colorized: bool,
 }
 
 fuzz_target!(|input: TestInput<'_>| {
@@ -54,62 +53,31 @@ fuzz_target!(|input: TestInput<'_>| {
     };
 
     // these are not allowed to be 0
-    if let Some(0) = input.with_minimum_substring_length {
-        input.with_minimum_substring_length = None;
-    }
+    input.minimum_substring_length = input.minimum_substring_length.max(1);
+    input.minimum_repetitions = input.minimum_repetitions.max(1);
 
-    if let Some(0) = input.with_minimum_repetitions {
-        input.with_minimum_repetitions = None;
-    }
+    let config = RegExpConfig {
+        minimum_repetitions: input.minimum_repetitions,
+        minimum_substring_length: input.minimum_substring_length,
+        is_digit_converted: input.is_digit_converted,
+        is_non_digit_converted: input.is_non_digit_converted,
+        is_space_converted: input.is_space_converted,
+        is_non_space_converted: input.is_non_space_converted,
+        is_word_converted: input.is_word_converted,
+        is_non_word_converted: input.is_non_word_converted,
+        is_repetition_converted: input.is_repetition_converted,
+        is_case_insensitive_matching: input.is_case_insensitive_matching,
+        is_capturing_group_enabled: input.is_capturing_group_enabled,
+        is_non_ascii_char_escaped: input.is_non_ascii_char_escaped,
+        is_astral_code_point_converted_to_surrogate: input.is_astral_code_point_converted_to_surrogate,
+        is_verbose_mode_enabled: input.is_verbose_mode_enabled,
+        is_start_anchor_disabled: input.is_start_anchor_disabled,
+        is_end_anchor_disabled: input.is_end_anchor_disabled,
+        is_output_colorized: input.is_output_colorized,
+    };
 
     let mut builder = RegExpBuilder::from(&input_data);
-
-    macro_rules! apply_bool {
-        ($x:ident) => {{
-            if input.$x {
-                builder.$x();
-            }
-        }};
-        ($x:ident, $($y:ident),+) => {{
-            apply_bool!($x);
-            apply_bool!($($y),+);
-        }}
-    }
-
-    apply_bool!(
-        with_conversion_of_digits,
-        with_conversion_of_non_digits,
-        with_conversion_of_whitespace,
-        with_conversion_of_non_whitespace,
-        with_conversion_of_words,
-        with_conversion_of_non_words,
-        with_conversion_of_repetitions,
-        with_case_insensitive_matching,
-        with_capturing_groups,
-        with_verbose_mode,
-        without_start_anchor,
-        without_end_anchor,
-        without_anchors,
-        with_syntax_highlighting
-    );
-
-    macro_rules! apply_opt {
-        ($x:ident) => {{
-            if let Some(x) = input.$x {
-                builder.$x(x);
-            }
-        }};
-        ($x:ident, $($y:ident),+) => {{
-            apply_opt!($x);
-            apply_opt!($($y),+);
-        }}
-    }
-
-    apply_opt!(
-        with_minimum_repetitions,
-        with_minimum_substring_length,
-        with_escaping_of_non_ascii_chars
-    );
+    builder.config = config;
 
     let _ = builder.build();
 });
