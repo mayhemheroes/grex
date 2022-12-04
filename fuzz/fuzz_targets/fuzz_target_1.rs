@@ -42,8 +42,27 @@ struct TestInput<'a> {
 }
 
 fuzz_target!(|input: TestInput<'_>| {
+    let mut input = input;
+
     // fuzzed code goes here
-    let mut builder = RegExpBuilder::from(&input.data);
+    let input_data = if input.data.is_empty() {
+        // we cannot give an empty list of test cases, so instead we create a vector with an empty
+        // string
+        vec![ByteString { bytes: &[] }]
+    } else {
+        input.data
+    };
+
+    // these are not allowed to be 0
+    if let Some(0) = input.with_minimum_substring_length {
+        input.with_minimum_substring_length = None;
+    }
+
+    if let Some(0) = input.with_minimum_repetitions {
+        input.with_minimum_repetitions = None;
+    }
+
+    let mut builder = RegExpBuilder::from(&input_data);
 
     macro_rules! apply_bool {
         ($x:ident) => {{
