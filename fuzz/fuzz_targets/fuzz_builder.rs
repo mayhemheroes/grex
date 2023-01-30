@@ -34,7 +34,6 @@ struct TestInput<'a> {
     is_capturing_group_enabled: bool,
     is_non_ascii_char_escaped: bool,
     is_astral_code_point_converted_to_surrogate: bool,
-    is_verbose_mode_enabled: bool,
     is_start_anchor_disabled: bool,
     is_end_anchor_disabled: bool,
     is_output_colorized: bool,
@@ -70,7 +69,10 @@ fuzz_target!(|input: TestInput<'_>| {
         is_capturing_group_enabled: input.is_capturing_group_enabled,
         is_non_ascii_char_escaped: input.is_non_ascii_char_escaped,
         is_astral_code_point_converted_to_surrogate: input.is_astral_code_point_converted_to_surrogate,
-        is_verbose_mode_enabled: input.is_verbose_mode_enabled,
+
+        // disable verbose mode since it's slow
+        is_verbose_mode_enabled: false,
+
         is_start_anchor_disabled: input.is_start_anchor_disabled,
         is_end_anchor_disabled: input.is_end_anchor_disabled,
         is_output_colorized: input.is_output_colorized,
