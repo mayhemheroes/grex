@@ -1,12 +1,15 @@
 #![no_main]
 
-use libfuzzer_sys::{arbitrary::Arbitrary, fuzz_target};
+use libfuzzer_sys::{arbitrary::Arbitrary, arbitrary::Unstructured, arbitrary::Result, fuzz_target};
 
 extern crate grex;
 
 use grex::{RegExpBuilder, RegExpConfig};
 
-#[derive(Arbitrary, Debug, Clone)]
+const MAX_STRING_LENGTH: usize = 12;
+const MAX_VEC_LENGTH: usize = 5;
+
+#[derive(Debug, Clone)]
 struct ByteString<'a> {
     bytes: &'a [u8],
 }
@@ -19,8 +22,6 @@ impl<'a> Into<String> for ByteString<'a> {
 
 #[derive(Arbitrary, Debug)]
 struct TestInput<'a> {
-    data: Vec<ByteString<'a>>,
-
     minimum_repetitions: u32,
     minimum_substring_length: u32,
     is_digit_converted: bool,
@@ -36,6 +37,29 @@ struct TestInput<'a> {
     is_start_anchor_disabled: bool,
     is_end_anchor_disabled: bool,
     is_output_colorized: bool,
+
+    #[arbitrary(with = arbitrary_input_data)]
+    data: Vec<ByteString<'a>>
+}
+
+fn arbitrary_input_data<'a>(u: &mut Unstructured<'a>) -> Result<Vec<ByteString<'a>>> {
+    let mut vec = Vec::with_capacity(MAX_VEC_LENGTH);
+    while !u.is_empty() && vec.len() < MAX_VEC_LENGTH {
+        let bytes_remaining = u.len();
+        let max_length = MAX_STRING_LENGTH.min(bytes_remaining);
+
+        let string_size = if vec.len() < MAX_VEC_LENGTH - 1 {
+            u.int_in_range(0..=max_length)?
+        } else {
+            max_length
+        };
+
+        let bytes = u.bytes(string_size)?;
+
+        vec.push(ByteString { bytes });
+    }
+
+    Ok(vec)
 }
 
 fuzz_target!(|input: TestInput<'_>| {
