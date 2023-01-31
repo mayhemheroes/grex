@@ -30,7 +30,6 @@ struct TestInput<'a> {
     is_word_converted: bool,
     is_non_word_converted: bool,
     is_repetition_converted: bool,
-    is_case_insensitive_matching: bool,
     is_capturing_group_enabled: bool,
     is_non_ascii_char_escaped: bool,
     is_astral_code_point_converted_to_surrogate: bool,
@@ -65,7 +64,10 @@ fuzz_target!(|input: TestInput<'_>| {
         is_word_converted: input.is_word_converted,
         is_non_word_converted: input.is_non_word_converted,
         is_repetition_converted: input.is_repetition_converted,
-        is_case_insensitive_matching: input.is_case_insensitive_matching,
+
+        // disable for efficiency
+        is_case_insensitive_matching: false,
+
         is_capturing_group_enabled: input.is_capturing_group_enabled,
         is_non_ascii_char_escaped: input.is_non_ascii_char_escaped,
         is_astral_code_point_converted_to_surrogate: input.is_astral_code_point_converted_to_surrogate,
