@@ -20,13 +20,8 @@ impl<'a> Into<String> for ByteString<'a> {
     }
 }
 
-const TEST_INPUT_REMAINING_SIZE: usize = 21;
-
 #[derive(Arbitrary, Debug)]
 struct TestInput<'a> {
-    #[arbitrary(with = arbitrary_input_data)]
-    data: Vec<ByteString<'a>>,
-
     minimum_repetitions: u32,
     minimum_substring_length: u32,
     is_digit_converted: bool,
@@ -42,11 +37,14 @@ struct TestInput<'a> {
     is_start_anchor_disabled: bool,
     is_end_anchor_disabled: bool,
     is_output_colorized: bool,
+
+    #[arbitrary(with = arbitrary_input_data)]
+    data: Vec<ByteString<'a>>
 }
 
 fn arbitrary_input_data<'a>(u: &mut Unstructured<'a>) -> Result<Vec<ByteString<'a>>> {
     let mut vec = Vec::with_capacity(MAX_VEC_LENGTH);
-    while u.len() > TEST_INPUT_REMAINING_SIZE && vec.len() < MAX_VEC_LENGTH {
+    while !u.is_empty() && vec.len() < MAX_VEC_LENGTH {
         let bytes_remaining = u.len();
         let max_length = MAX_STRING_LENGTH.min(bytes_remaining);
 
@@ -59,10 +57,6 @@ fn arbitrary_input_data<'a>(u: &mut Unstructured<'a>) -> Result<Vec<ByteString<'
         let bytes = u.bytes(string_size)?;
 
         vec.push(ByteString { bytes });
-    }
-
-    if vec.is_empty() {
-        vec.push(ByteString { bytes: &[] });
     }
 
     Ok(vec)
