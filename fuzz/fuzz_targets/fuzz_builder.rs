@@ -21,15 +21,12 @@ impl<'a> Into<String> for ByteString<'a> {
 struct TestInput<'a> {
     data: Vec<ByteString<'a>>,
 
-    minimum_repetitions: u32,
-    minimum_substring_length: u32,
     is_digit_converted: bool,
     is_non_digit_converted: bool,
     is_space_converted: bool,
     is_non_space_converted: bool,
     is_word_converted: bool,
     is_non_word_converted: bool,
-    is_repetition_converted: bool,
     is_capturing_group_enabled: bool,
     is_non_ascii_char_escaped: bool,
     is_astral_code_point_converted_to_surrogate: bool,
@@ -50,20 +47,20 @@ fuzz_target!(|input: TestInput<'_>| {
         input.data
     };
 
-    // these are not allowed to be 0
-    input.minimum_substring_length = input.minimum_substring_length.max(1);
-    input.minimum_repetitions = input.minimum_repetitions.max(1);
-
     let config = RegExpConfig {
-        minimum_repetitions: input.minimum_repetitions,
-        minimum_substring_length: input.minimum_substring_length,
+        // these parameters are not used unless is_repetition_converted is true
+        minimum_repetitions: 0,
+        minimum_substring_length: 0,
+
         is_digit_converted: input.is_digit_converted,
         is_non_digit_converted: input.is_non_digit_converted,
         is_space_converted: input.is_space_converted,
         is_non_space_converted: input.is_non_space_converted,
         is_word_converted: input.is_word_converted,
         is_non_word_converted: input.is_non_word_converted,
-        is_repetition_converted: input.is_repetition_converted,
+
+        // disable for efficiency
+        is_repetition_converted: false,
 
         // disable for efficiency
         is_case_insensitive_matching: false,
