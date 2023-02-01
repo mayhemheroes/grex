@@ -17,9 +17,17 @@ impl<'a> Into<String> for ByteString<'a> {
     }
 }
 
+const STRING_COUNT: usize = 4;
+const STRING_LENGTH: usize = 8;
+
 #[derive(Arbitrary, Debug)]
-struct TestInput<'a> {
-    data: Vec<ByteString<'a>>,
+struct InputData {
+    bytes: [[u8; STRING_LENGTH]; STRING_COUNT]
+}
+
+#[derive(Arbitrary, Debug)]
+struct TestInput {
+    data: InputData,
 
     is_digit_converted: bool,
     is_non_digit_converted: bool,
@@ -35,17 +43,8 @@ struct TestInput<'a> {
     is_output_colorized: bool,
 }
 
-fuzz_target!(|input: TestInput<'_>| {
+fuzz_target!(|input: TestInput| {
     let mut input = input;
-
-    // fuzzed code goes here
-    let input_data = if input.data.is_empty() {
-        // we cannot give an empty list of test cases, so instead we create a vector with an empty
-        // string
-        vec![ByteString { bytes: &[] }]
-    } else {
-        input.data
-    };
 
     let config = RegExpConfig {
         // these parameters are not used unless is_repetition_converted is true
@@ -76,6 +75,8 @@ fuzz_target!(|input: TestInput<'_>| {
         is_end_anchor_disabled: input.is_end_anchor_disabled,
         is_output_colorized: input.is_output_colorized,
     };
+
+    let input_data = input.data.bytes.iter().map(|s| String::from_utf8_lossy(&s[..])).collect::<Vec<_>>();
 
     let mut builder = RegExpBuilder::from(&input_data);
     builder.config = config;
