@@ -17,8 +17,8 @@ impl<'a> Into<String> for ByteString<'a> {
     }
 }
 
-const STRING_COUNT: usize = 4;
-const STRING_LENGTH: usize = 8;
+const STRING_COUNT: usize = 2;
+const STRING_LENGTH: usize = 4;
 
 #[derive(Arbitrary, Debug)]
 struct InputData {
