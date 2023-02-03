@@ -1,12 +1,12 @@
 #![no_main]
 
-use libfuzzer_sys::{arbitrary::Arbitrary, fuzz_target};
+use libfuzzer_sys::{arbitrary::Arbitrary, arbitrary::Unstructured, arbitrary::Result, fuzz_target};
 
 extern crate grex;
 
 use grex::{RegExpBuilder, RegExpConfig};
 
-#[derive(Arbitrary, Debug, Clone)]
+#[derive(Debug, Clone)]
 struct ByteString<'a> {
     bytes: &'a [u8],
 }
@@ -20,15 +20,13 @@ impl<'a> Into<String> for ByteString<'a> {
 const STRING_COUNT: usize = 3;
 const STRING_LENGTH: usize = 6;
 
-#[derive(Arbitrary, Debug)]
-struct InputData {
-    bytes: [[u8; STRING_LENGTH]; STRING_COUNT]
+#[derive(Debug)]
+struct InputData<'a> {
+    bytes: [&'a [u8]; STRING_COUNT]
 }
 
 #[derive(Arbitrary, Debug)]
-struct TestInput {
-    data: InputData,
-
+struct TestInput<'a> {
     is_digit_converted: bool,
     is_non_digit_converted: bool,
     is_space_converted: bool,
@@ -41,6 +39,36 @@ struct TestInput {
     is_start_anchor_disabled: bool,
     is_end_anchor_disabled: bool,
     is_output_colorized: bool,
+
+    data: InputData<'a>
+}
+
+impl<'a> Arbitrary<'a> for InputData<'a> {
+    fn arbitrary(u: &mut Unstructured<'a>) -> Result<Self> {
+        let mut input_bytes = [[].as_slice(); STRING_COUNT];
+
+        let mut current_string = 0;
+        while current_string < STRING_COUNT && !u.is_empty() {
+            let bytes_remaining = u.len();
+            let max_length = STRING_LENGTH.min(bytes_remaining) as u8;
+
+            let string_size = u.int_in_range(0..=max_length)?;
+            // now, let's get that many
+            input_bytes[current_string] = u.bytes(string_size as usize)?;
+
+            current_string += 1;
+        }
+
+        Ok(InputData { bytes: input_bytes })
+    }
+
+    fn size_hint(_depth: usize) -> (usize, Option<usize>) {
+        let min = 0;
+        // 1: size of string
+        let max = (1 + STRING_LENGTH) * STRING_COUNT;
+
+        (min, Some(max))
+    }
 }
 
 fuzz_target!(|input: TestInput| {
