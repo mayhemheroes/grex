@@ -67,7 +67,8 @@ impl<'a> Arbitrary<'a> for InputData<'a> {
 
     fn size_hint(_depth: usize) -> (usize, Option<usize>) {
         let min = 0;
-        // 1: size of string
+        // 1: number of strings
+        // 1: size of each string
         let max = 1 + (1 + STRING_LENGTH) * STRING_COUNT;
 
         (min, Some(max))
