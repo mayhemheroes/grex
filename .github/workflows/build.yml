@@ -62,8 +62,6 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v3
-        with:
-          ref: 646f3870effd7d57bb94630a09bf16ad8412ed99
 
       - name: Add rustup default target
         run: rustup target add ${{ matrix.target }}
