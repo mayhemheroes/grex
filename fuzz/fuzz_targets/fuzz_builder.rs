@@ -22,6 +22,8 @@ const STRING_LENGTH: usize = 8;
 
 #[derive(Debug)]
 struct InputData<'a> {
+    // limits the number of strings used
+    num_strings: u8,
     bytes: [&'a [u8]; STRING_COUNT]
 }
 
@@ -46,9 +48,10 @@ struct TestInput<'a> {
 impl<'a> Arbitrary<'a> for InputData<'a> {
     fn arbitrary(u: &mut Unstructured<'a>) -> Result<Self> {
         let mut input_bytes = [[].as_slice(); STRING_COUNT];
+        let num_strings = u.int_in_range(1..=(STRING_COUNT as u8))?;
 
-        let mut current_string = 0;
-        while current_string < STRING_COUNT && !u.is_empty() {
+        let mut current_string = 0 as usize;
+        while current_string < num_strings as usize && !u.is_empty() {
             let bytes_remaining = u.len();
             let max_length = STRING_LENGTH.min(bytes_remaining) as u8;
 
@@ -59,13 +62,13 @@ impl<'a> Arbitrary<'a> for InputData<'a> {
             current_string += 1;
         }
 
-        Ok(InputData { bytes: input_bytes })
+        Ok(InputData { num_strings, bytes: input_bytes })
     }
 
     fn size_hint(_depth: usize) -> (usize, Option<usize>) {
         let min = 0;
         // 1: size of string
-        let max = (1 + STRING_LENGTH) * STRING_COUNT;
+        let max = 1 + (1 + STRING_LENGTH) * STRING_COUNT;
 
         (min, Some(max))
     }
@@ -104,7 +107,7 @@ fuzz_target!(|input: TestInput| {
         is_output_colorized: input.is_output_colorized,
     };
 
-    let input_data = input.data.bytes.iter().map(|s| String::from_utf8_lossy(&s[..])).collect::<Vec<_>>();
+    let input_data = input.data.bytes.iter().take(input.data.num_strings as usize).map(|s| String::from_utf8_lossy(&s[..])).collect::<Vec<_>>();
 
     let mut builder = RegExpBuilder::from(&input_data);
     builder.config = config;
